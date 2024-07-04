@@ -79,15 +79,15 @@ class BhhsampSpider(scrapy.Spider):
             'instagram': instagram if instagram else None
         }
 
-        # Logging JSON data
+        
         logging.info(json.dumps(agent_data, separators=(',', ':')))
 
-        # Writing to JSON file in single line format
+        
         with open('agents_data.json', 'a') as json_file:
             json.dump(agent_data, json_file, separators=(',', ':'))
             json_file.write('\n')
 
-        # Writing to CSV file in single line format
+        
         csv_columns = ['name', 'image_url', 'phone_number', 'address', 'description', 'Facebook', 'twitter', 'linkedin', 'youtube', 'pinterest', 'instagram']
         with open('agents_data.csv', 'a', newline='') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=csv_columns, delimiter=',')
