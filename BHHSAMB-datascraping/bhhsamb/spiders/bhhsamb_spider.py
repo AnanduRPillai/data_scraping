@@ -58,12 +58,12 @@ class BhhsampSpider(scrapy.Spider):
         address_xpath = response.xpath('//ul//li[@class="rng-agent-profile-contact-address"]//text()').getall()
         address = ' '.join([x.strip() for x in address_xpath if x.strip()])
         description = response.xpath('//article[@class="rng-agent-profile-content"]//span/text()').get(default="").strip()
-        facebook = response.xpath('//ul//li[@class="social-facebook"]//a/@href').get()
-        twitter = response.xpath('//ul//li[@class="social-twitter"]//a/@href').get()
-        linkedin = response.xpath('//ul//li[@class="social-linkedin"]//a/@href').get()
-        youtube = response.xpath('//ul//li[@class="social-youtube"]//a/@href').get()
-        pinterest = response.xpath('//ul//li[@class="social-pinterest"]//a/@href').get()
-        instagram = response.xpath('//ul//li[@class="social-instagram"]//a/@href').get()
+        facebook = response.xpath('//li[@class="social-facebook"]//a/@href').get()
+        twitter = response.xpath('//li[@class="social-twitter"]//a/@href').get()
+        linkedin = response.xpath('//li[@class="social-linkedin"]//a/@href').get()
+        youtube = response.xpath('//li[@class="social-youtube"]//a/@href').get()
+        pinterest = response.xpath('//li[@class="social-pinterest"]//a/@href').get()
+        instagram = response.xpath('//li[@class="social-instagram"]//a/@href').get()
 
         agent_data = {
             'name': name,
