@@ -23,8 +23,8 @@ headers = {
 }
 
 class BhhsampSpider(scrapy.Spider):
-    name = "bhhsamp"
-    allowed_domains = ["bhhsamb.com"]
+    name = "bhhsamp_"
+    allowed_domains = ["www.bhhsamb.com"]
     start_urls = ['https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=1&sortBy=random']
     agent_count = 0
     max_agents = 1120
@@ -38,26 +38,28 @@ class BhhsampSpider(scrapy.Spider):
         )
 
     def parse(self, response):
-        agent_links = response.xpath('//a[@class="site-roster-card-image-link"]/@href').extract()
-        for link in agent_links:
+        page = response.meta.get('page')
+        url_xpath = response.xpath('//a[@class="site-roster-card-image-link"]//@href').extract()
+        for p_url in url_xpath:
             if self.agent_count < self.max_agents:
-                yield response.follow(link, headers=headers, callback=self.parse_agent)
+                product_url = 'https://www.bhhsamb.com' + p_url
+                yield Request(product_url, callback=self.parse_product)
             else:
                 break
 
+        page += 1
+        next_link = f'https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber={page}&sortBy=random'
         if self.agent_count < self.max_agents:
-            page = response.meta.get('page', 1) + 1
-            next_page = f'https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber={page}&sortBy=random'
-            if agent_links:
-                yield Request(next_page, headers=headers, meta={'page': page}, callback=self.parse)
+            yield Request(next_link, headers=headers, meta={'page': page}, callback=self.parse)
 
-    def parse_agent(self, response):
-        name = response.xpath('//p[@class="rng-agent-profile-contact-name"]/text()').get(default='').strip()
-        image_url = response.xpath('//article[@class="rng-agent-profile-main"]//img/@src').get()
-        phone_number = response.xpath('//ul//li[@class="rng-agent-profile-contact-phone"]//a/text()').get(default='').strip()
-        address_xpath = response.xpath('//ul//li[@class="rng-agent-profile-contact-address"]//text()').getall()
-        address = ' '.join([x.strip() for x in address_xpath if x.strip()])
-        description = response.xpath('//article[@class="rng-agent-profile-content"]//span/text()').get(default="").strip()
+    def parse_product(self, response):
+        name = response.xpath('//p[@class="rng-agent-profile-contact-name"]/text()').extract_first('').strip()
+        image_url = response.xpath('//article[@class="rng-agent-profile-main"]//img//@src').get()
+        phone_number = response.xpath('//ul//li[@class="rng-agent-profile-contact-phone"]//a//text()').extract_first('').strip()
+
+        address_xpath = response.xpath('//ul//li[@class="rng-agent-profile-contact-address"]//text()').extract()
+        address = ''.join([x.strip() for x in address_xpath if x.strip()])
+
         facebook = response.xpath('//li[@class="social-facebook"]//a/@href').get()
         twitter = response.xpath('//li[@class="social-twitter"]//a/@href').get()
         linkedin = response.xpath('//li[@class="social-linkedin"]//a/@href').get()
@@ -70,7 +72,7 @@ class BhhsampSpider(scrapy.Spider):
             'image_url': image_url,
             'phone_number': phone_number,
             'address': address,
-            'description': description if description else None,
+            'description': None,
             'Facebook': facebook if facebook else None,
             'twitter': twitter if twitter else None,
             'linkedin': linkedin if linkedin else None,
@@ -79,22 +81,10 @@ class BhhsampSpider(scrapy.Spider):
             'instagram': instagram if instagram else None
         }
 
-        
-        logging.info(json.dumps(agent_data, separators=(',', ':')))
-
-        
-        with open('agents_data.json', 'a') as json_file:
-            json.dump(agent_data, json_file, separators=(',', ':'))
-            json_file.write('\n')
-
-        
-        csv_columns = ['name', 'image_url', 'phone_number', 'address', 'description', 'Facebook', 'twitter', 'linkedin', 'youtube', 'pinterest', 'instagram']
-        with open('agents_data.csv', 'a', newline='') as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames=csv_columns, delimiter=',')
-            if self.agent_count == 0:
-                writer.writeheader()
-            writer.writerow(agent_data)
+        with open('sample_data.json', 'a') as file:
+            file.write(json.dumps(agent_data, separators=(',', ':')) + '\n')
 
         self.agent_count += 1
         if self.agent_count >= self.max_agents:
             self.crawler.engine.close_spider(self, 'Reached the target number of agents')
+
