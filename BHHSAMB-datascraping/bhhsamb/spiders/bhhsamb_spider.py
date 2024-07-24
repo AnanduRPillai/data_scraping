@@ -1,6 +1,5 @@
 import scrapy
 import json
-import csv
 import logging
 from scrapy.http import Request, FormRequest
 from scrapy.spiders import Spider
@@ -81,7 +80,7 @@ class BhhsampSpider(scrapy.Spider):
             'instagram': instagram if instagram else None
         }
 
-        with open('sample_data.json', 'a') as file:
+        with open('agents_data.json', 'a') as file:
             file.write(json.dumps(agent_data, separators=(',', ':')) + '\n')
 
         self.agent_count += 1
