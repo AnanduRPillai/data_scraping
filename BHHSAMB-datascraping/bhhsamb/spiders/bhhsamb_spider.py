@@ -77,7 +77,7 @@ class BhhsampSpider(scrapy.Spider):
             'social_links': {key: value for key, value in social_links.items() if value}
         }
 
-        with open('data.json', 'a') as file:
+        with open('agents_data.json', 'a') as file:
             file.write(json.dumps(agent_data, separators=(',', ':')) + '\n')
 
         self.agent_count += 1
