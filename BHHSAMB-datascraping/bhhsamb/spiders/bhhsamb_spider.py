@@ -1,7 +1,6 @@
 import scrapy
-import json
 from scrapy.http import Request
-
+import json
 
 class BhhsampSpider(scrapy.Spider):
     name = "bhhsamp"
@@ -39,7 +38,7 @@ class BhhsampSpider(scrapy.Spider):
 
     def parse(self, response):
         page = response.meta.get('page')
-        agent_links = response.xpath('//a[@class="site-roster-card-image-link"]//@href').extract()
+        agent_links = response.xpath('//a[@class="cms-int-roster-card-image-container site-roster-card-image-link"]//@href').extract()
         for link in agent_links:
             if self.agent_count < self.max_agents:
                 agent_url = response.urljoin(link)
@@ -57,27 +56,30 @@ class BhhsampSpider(scrapy.Spider):
         image_url = response.xpath('//article[@class="rng-agent-profile-main"]//img//@src').get(default='')
         phone_number = response.xpath('//ul//li[@class="rng-agent-profile-contact-phone"]//a//text()').get(default='').strip()
 
-        address = ''.join(response.xpath('//ul//li[@class="rng-agent-profile-contact-address"]//text()').getall()).strip()
+        address_parts = response.xpath('//ul//li[@class="rng-agent-profile-contact-address"]//text()').getall()
+        address = ', '.join(part.strip() for part in address_parts if part.strip()).replace('\r\n', '').replace('\n', '').replace('\r', '')
 
         social_links = {
-            'facebook': response.xpath('//li[@class="social-facebook"]//a/@href').get(),
-            'twitter': response.xpath('//li[@class="social-twitter"]//a/@href').get(),
-            'linkedin': response.xpath('//li[@class="social-linkedin"]//a/@href').get(),
-            'youtube': response.xpath('//li[@class="social-youtube"]//a/@href').get(),
-            'pinterest': response.xpath('//li[@class="social-pinterest"]//a/@href').get(),
-            'instagram': response.xpath('//li[@class="social-instagram"]//a/@href').get(),
+            'facebook': response.xpath('//li[@class="social-facebook"]//a/@href').get(default=None),
+            'twitter': response.xpath('//li[@class="social-twitter"]//a/@href').get(default=None),
+            'linkedin': response.xpath('//li[@class="social-linkedin"]//a/@href').get(default=None),
+            'youtube': response.xpath('//li[@class="social-youtube"]//a/@href').get(default=None),
+            'pinterest': response.xpath('//li[@class="social-pinterest"]//a/@href').get(default=None),
+            'instagram': response.xpath('//li[@class="social-instagram"]//a/@href').get(default=None),
         }
+
+        description = response.xpath('//article[@class="rng-agent-profile-content"]//span/text()').get(default='').strip()
 
         agent_data = {
             'name': name,
             'image_url': image_url,
             'phone_number': phone_number,
             'address': address,
-            'description': response.xpath('//article[@class="rng-agent-profile-content"]//span/text()').get(default='').strip(),
+            'description': description,
             'social_links': {key: value for key, value in social_links.items() if value}
         }
 
-        with open('agents_data.json', 'a') as file:
+        with open('agents_data.jsonl', 'a') as file:
             file.write(json.dumps(agent_data, separators=(',', ':')) + '\n')
 
         self.agent_count += 1
